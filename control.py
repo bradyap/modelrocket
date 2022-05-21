@@ -1,41 +1,35 @@
 import serial
-import time
 from tkinter import *
+import asyncio
+from threading import Thread
 
-#serial_port = "/dev/tty.HC-02"
-serial_port = '/dev/tty.usbmodem13101'
+serial_port = "/dev/tty.rocket"
 serial_baudrate = 9600
 
 
-def read_serial(ser):
-    data = ser.readline()
+async def read_serial(ser):
+    while True:
+        data = ser.readline()
+        print(data.decode("utf-8"))
+        await asyncio.sleep(0.01)
 
-    if data != "":
-        print(data)
-    else:
-        print("No response from rocket.")
 
-def test_connection(ser):
-    ser.write(b's')
-    read_serial(ser)
+def ping(ser):
+    ser.write(b'p')
+
 
 def open_door(ser):
     ser.write(b"o")
-    read_serial(ser)
 
 
 def close_door(ser):
     ser.write(b"c")
-    read_serial(ser)
 
-
-def main():
-    ser = serial.Serial(serial_port, serial_baudrate)
-
+async def gui(ser):
     gui = Tk()
     gui.title("Rocket Control")
-    
-    test_button = Button(gui, text="Test Connection", command=lambda: test_connection(ser))
+
+    test_button = Button(gui, text="Ping", command=lambda: ping(ser))
     test_button.grid(row=0, column=0)
 
     open_button = Button(gui, text="Open", command=lambda: open_door(ser))
@@ -43,9 +37,14 @@ def main():
 
     close_button = Button(gui, text="Close", command=lambda: close_door(ser))
     close_button.grid(row=1, column=2)
-
+    
     gui.mainloop()
 
+
+def main():
+    ser = serial.Serial(serial_port, serial_baudrate)
+    asyncio.run(gui(ser))
+    
 
 if __name__ == "__main__":
     main()
